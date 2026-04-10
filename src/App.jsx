@@ -203,9 +203,9 @@ function PeriodCard({ period, isAdmin, onUpdate, onDelete }) {
   const totalDone = period.items.filter((i) => i.status === 'selesai').reduce((s, i) => s + i.price, 0)
   const totalRef = period.items.filter((i) => i.price > 0 && i.status === 'refund').reduce((s, i) => s + i.price, 0)
   const totalCarryOverValue = refundCarryOvers.reduce((s, i) => s + i.price, 0)
-  const overviewAnggaranAwal = BASE_SALARY + mainWorkDoneTotal + mainWorkRefundTotal
-  const overviewSisaDicairkan = overviewAnggaranAwal - Math.abs(totalCarryOverValue)
   const totalPlannedSum = period.items.filter((i) => i.status === 'planned' && i.price > 0).reduce((s, i) => s + i.price, 0)
+  const overviewAnggaranAwal = BASE_SALARY + mainWorkDoneTotal + mainWorkRefundTotal + totalPlannedSum
+  const overviewSisaDicairkan = overviewAnggaranAwal - Math.abs(totalCarryOverValue)
   const effectiveProjectValue = totalDone === 0 ? totalPlannedSum : totalDone
   const totalNetReceived = BASE_SALARY + effectiveProjectValue + totalRef - Math.abs(totalCarryOverValue)
 
