@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { BudgetOverviewCard } from './BudgetOverviewCard'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
+const APP_PASSWORD = 'untukmassudib'
 const ADMIN_PASSCODE = '1234'
 const BASE_SALARY = 3000000
 const DEFAULT_GS_URL =
   'https://script.google.com/macros/s/AKfycbw4AKi7ajWJ-Ovoh2z-na-wZ4w33O0XDZoPiUs4kV1Z-IhuOTjG-qJmRFqoWWSOZOA5/exec'
 const STORAGE_KEY = 'trackerPekerjaanData'
+const APP_UNLOCKED_KEY = 'appUnlocked'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateId() {
@@ -118,6 +120,68 @@ function AuthModal({ onClose, onSuccess }) {
             Konfirmasi
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function PasswordGate({ onSuccess }) {
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(false)
+  const inputRef = useRef()
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }, [])
+
+  function verify() {
+    if (password === APP_PASSWORD) {
+      setPassword('')
+      setError(false)
+      localStorage.setItem(APP_UNLOCKED_KEY, 'true')
+      onSuccess()
+    } else {
+      setError(true)
+      setPassword('')
+    }
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter') verify()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-10 border border-slate-100">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 mx-auto mb-4">
+            <i className="fas fa-lock text-white text-2xl" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 text-center uppercase tracking-tight">
+            Budgeting Produksi
+          </h3>
+          <p className="text-xs text-slate-500 mt-2">Masukkan password untuk melanjutkan</p>
+        </div>
+        <input
+          ref={inputRef}
+          type="password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(false) }}
+          onKeyDown={handleKey}
+          placeholder="Password"
+          className="w-full p-4 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none text-center text-lg font-semibold mb-4 bg-slate-50 transition-all"
+        />
+        {error && (
+          <div className="text-red-500 text-xs font-black text-center mb-6 uppercase tracking-widest">
+            ❌ Password Salah
+          </div>
+        )}
+        <button
+          onClick={verify}
+          className="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-colors"
+        >
+          Akses
+        </button>
       </div>
     </div>
   )
@@ -386,6 +450,7 @@ export default function App() {
   const [appData, setAppData] = useState(loadFromStorage)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [isAppUnlocked, setIsAppUnlocked] = useState(() => localStorage.getItem(APP_UNLOCKED_KEY) === 'true')
   const [syncStatus, setSyncStatus] = useState('Sistem Terkoneksi')
   const syncTimerRef = useRef(null)
   const gsUrl = localStorage.getItem('tracker_gs_url') || DEFAULT_GS_URL
@@ -395,6 +460,13 @@ export default function App() {
     handleCloudSync('pull')
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })
   }, [])
+
+  // Scroll to bottom when app unlocked
+  useEffect(() => {
+    if (isAppUnlocked) {
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }), 100)
+    }
+  }, [isAppUnlocked])
 
   // Save to localStorage whenever appData changes
   useEffect(() => {
@@ -542,88 +614,94 @@ export default function App() {
   }
 
   return (
-    <div className="text-slate-900 min-h-screen overflow-x-hidden">
-      {/* Floating sticky header */}
-      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-700/60 shadow-lg shadow-slate-900/30">
-        <div className="max-w-5xl mx-auto px-4 md:px-8">
-          <header className="flex items-center justify-between py-3 gap-4">
-            {/* Brand */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-                <i className="fas fa-film text-white text-xs" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-sm md:text-base font-black tracking-tight text-white leading-tight">
-                  Budgeting <span className="text-indigo-400">Produksi</span>
-                </h1>
-                <p className="text-[10px] text-slate-400 font-medium leading-tight truncate">
-                  Rekap perencanaan dan budgeting bulanan produksi konten (video) di channel rumaysho.com
-                </p>
-              </div>
+    <>
+      {!isAppUnlocked ? (
+        <PasswordGate onSuccess={() => setIsAppUnlocked(true)} />
+      ) : (
+        <div className="text-slate-900 min-h-screen overflow-x-hidden">
+          {/* Floating sticky header */}
+          <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-700/60 shadow-lg shadow-slate-900/30">
+            <div className="max-w-5xl mx-auto px-4 md:px-8">
+              <header className="flex items-center justify-between py-3 gap-4">
+                {/* Brand */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                    <i className="fas fa-film text-white text-xs" />
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-sm md:text-base font-black tracking-tight text-white leading-tight">
+                      Budgeting <span className="text-indigo-400">Produksi</span>
+                    </h1>
+                    <p className="text-[10px] text-slate-400 font-medium leading-tight truncate">
+                      Rekap perencanaan dan budgeting bulanan produksi konten (video) di channel rumaysho.com
+                    </p>
+                  </div>
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2 no-print shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <i className="fas fa-circle text-[6px] text-indigo-400" />
+                    {syncStatus}
+                  </span>
+                  {isAdmin && (
+                    <span className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
+                      Admin
+                    </span>
+                  )}
+                  <button
+                    onClick={handleAdminAuth}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-colors ${
+                      isAdmin ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-700 text-white hover:bg-slate-600'
+                    }`}
+                  >
+                    <i className={`fas ${isAdmin ? 'fa-lock-open' : 'fa-lock'} text-[10px]`} />
+                    <span>{isAdmin ? 'Logout' : 'Login'}</span>
+                  </button>
+                </div>
+              </header>
             </div>
-            {/* Actions */}
-            <div className="flex items-center gap-2 no-print shrink-0">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <i className="fas fa-circle text-[6px] text-indigo-400" />
-                {syncStatus}
-              </span>
-              {isAdmin && (
-                <span className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
-                  Admin
-                </span>
-              )}
-              <button
-                onClick={handleAdminAuth}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-colors ${
-                  isAdmin ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-700 text-white hover:bg-slate-600'
-                }`}
-              >
-                <i className={`fas ${isAdmin ? 'fa-lock-open' : 'fa-lock'} text-[10px]`} />
-                <span>{isAdmin ? 'Logout' : 'Login'}</span>
-              </button>
-            </div>
-          </header>
-        </div>
-      </div>
-
-      <div className="p-1 sm:p-4 md:p-8 pt-0 sm:pt-0 md:pt-0">
-      <div className="max-w-5xl mx-auto">
-        {/* Period Cards */}
-        <main className="space-y-0 mt-4 md:mt-6">
-          {appData.map((period, idx) => (
-            <div key={period.id}>
-              <PeriodCard
-                period={period}
-                isAdmin={isAdmin}
-                onUpdate={handlePeriodUpdate}
-                onDelete={handleDeletePeriod}
-              />
-              {idx !== appData.length - 1 && (
-                <div className="my-12 md:my-16 w-[100dvw] ml-[calc(50%-50dvw)] h-1.5 md:h-2 bg-white" />
-              )}
-            </div>
-          ))}
-        </main>
-
-        {/* Add Period Button */}
-        {isAdmin && (
-          <div className="mt-12 text-center pb-16">
-            <button
-              onClick={addNewPeriod}
-              className="px-12 py-6 bg-white border-2 border-dashed border-slate-300 hover:border-indigo-400 text-slate-700 hover:text-indigo-600 rounded-2xl font-black transition-all flex items-center gap-3 mx-auto shadow-sm text-sm group"
-            >
-              <i className="fas fa-plus-circle text-xl group-hover:scale-110 transition-transform" />
-              Tambah Periode Produksi Baru
-            </button>
           </div>
-        )}
-      </div>
-      </div>
 
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} onSuccess={onAuthSuccess} />
+          <div className="p-1 sm:p-4 md:p-8 pt-0 sm:pt-0 md:pt-0">
+          <div className="max-w-5xl mx-auto">
+            {/* Period Cards */}
+            <main className="space-y-0 mt-4 md:mt-6">
+              {appData.map((period, idx) => (
+                <div key={period.id}>
+                  <PeriodCard
+                    period={period}
+                    isAdmin={isAdmin}
+                    onUpdate={handlePeriodUpdate}
+                    onDelete={handleDeletePeriod}
+                  />
+                  {idx !== appData.length - 1 && (
+                    <div className="my-12 md:my-16 w-[100dvw] ml-[calc(50%-50dvw)] h-1.5 md:h-2 bg-white" />
+                  )}
+                </div>
+              ))}
+            </main>
+
+            {/* Add Period Button */}
+            {isAdmin && (
+              <div className="mt-12 text-center pb-16">
+                <button
+                  onClick={addNewPeriod}
+                  className="px-12 py-6 bg-white border-2 border-dashed border-slate-300 hover:border-indigo-400 text-slate-700 hover:text-indigo-600 rounded-2xl font-black transition-all flex items-center gap-3 mx-auto shadow-sm text-sm group"
+                >
+                  <i className="fas fa-plus-circle text-xl group-hover:scale-110 transition-transform" />
+                  Tambah Periode Produksi Baru
+                </button>
+              </div>
+            )}
+          </div>
+          </div>
+
+          {/* Auth Modal */}
+          {showAuthModal && (
+            <AuthModal onClose={() => setShowAuthModal(false)} onSuccess={onAuthSuccess} />
+          )}
+        </div>
       )}
-    </div>
+    </>
   )
 }
