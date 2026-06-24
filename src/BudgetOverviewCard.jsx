@@ -19,6 +19,7 @@ export function BudgetOverviewCard({
   onUpdateTitle,
   onUpdatePrice,
   onDeleteItem,
+  onToggleInclude,
 }) {
   const canvasRef = useRef(null)
   const chartRef = useRef(null)
@@ -198,17 +199,29 @@ export function BudgetOverviewCard({
                     <div className="w-5 h-5 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center text-[9px] font-black text-slate-500 shrink-0">
                       {normalStartIdx + idx + 1}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      {canEdit ? (
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Include checkbox: planned items can be toggled; done items are shown checked and disabled */}
+                      <label className="inline-flex items-center">
                         <input
-                          type="text"
-                          defaultValue={item.title}
-                          onBlur={(e) => onUpdateTitle?.(item.id, e.target.value)}
-                          className="w-full bg-transparent outline-none text-xs font-medium text-slate-800 focus:text-indigo-700"
+                          type="checkbox"
+                          checked={!!item.includeInRequest}
+                          onChange={(e) => onToggleInclude?.(item.id, e.target.checked)}
+                          disabled={!canEdit && !isDone}
+                          className="w-4 h-4 mr-2"
                         />
-                      ) : (
-                        <p className="text-xs font-medium leading-snug truncate text-slate-800">{item.title}</p>
-                      )}
+                      </label>
+                      <div className="min-w-0 flex-1">
+                        {canEdit ? (
+                          <input
+                            type="text"
+                            defaultValue={item.title}
+                            onBlur={(e) => onUpdateTitle?.(item.id, e.target.value)}
+                            className="w-full bg-transparent outline-none text-xs font-medium text-slate-800 focus:text-indigo-700"
+                          />
+                        ) : (
+                          <p className="text-xs font-medium leading-snug truncate text-slate-800">{item.title}</p>
+                        )}
+                      </div>
                     </div>
                     {canEdit ? (
                       <input

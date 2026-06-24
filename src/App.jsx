@@ -206,7 +206,13 @@ function PeriodCard({ period, isAdmin, onUpdate, onDelete }) {
   const totalPlannedSum = period.items.filter((i) => i.status === 'planned' && i.price > 0).reduce((s, i) => s + i.price, 0)
   const overviewAnggaranAwal = BASE_SALARY + mainWorkDoneTotal + mainWorkRefundTotal + totalPlannedSum
   const overviewSisaDicairkan = overviewAnggaranAwal - Math.abs(totalCarryOverValue)
-  const effectiveProjectValue = totalDone === 0 ? totalPlannedSum : totalDone
+  // Sum of planned items that admin chose to include in the current request
+  const plannedIncludedSum = mainWorkItems
+    .filter((i) => i.status === 'planned' && i.price > 0 && i.includeInRequest)
+    .reduce((s, i) => s + i.price, 0)
+  // Effective project value for request: finished work + manually included planned items.
+  let effectiveProjectValue = mainWorkDoneTotal + plannedIncludedSum
+  if (effectiveProjectValue === 0) effectiveProjectValue = totalPlannedSum
   const totalNetReceived = BASE_SALARY + effectiveProjectValue + totalRef - Math.abs(totalCarryOverValue)
 
   function handleAddItem() {
@@ -218,6 +224,7 @@ function PeriodCard({ period, isAdmin, onUpdate, onDelete }) {
       status: 'planned',
       isCarryOver: false,
       isManualAdjustment: parseFloat(newPrice) < 0,
+      includeInRequest: false,
     })
     setNewTitle('')
     setNewPrice('')
@@ -369,6 +376,7 @@ function PeriodCard({ period, isAdmin, onUpdate, onDelete }) {
               onUpdateTitle={(itemId, val) => onUpdate(period.id, 'updateItemTitle', { itemId, val })}
               onUpdatePrice={(itemId, val) => onUpdate(period.id, 'updateItemPrice', { itemId, val })}
               onDeleteItem={(itemId) => onUpdate(period.id, 'deleteItem', { itemId })}
+              onToggleInclude={(itemId, include) => onUpdate(period.id, 'setInclude', { itemId, include })}
             />
           </div>
 
@@ -529,8 +537,8 @@ export default function App() {
         if (last.endDate) start = new Date(last.endDate)
         const refundItems = last.items.filter((i) => i.status === 'refund' && i.price > 0)
         refundItems.forEach((i) => {
-          nextItems.push({ id: generateId(), title: i.title, price: -i.price, status: 'planned', isCarryOver: true })
-          nextItems.push({ id: generateId(), title: i.title, price: 0, status: 'planned', isCarryOver: false, isRework: true })
+          nextItems.push({ id: generateId(), title: i.title, price: -i.price, status: 'planned', isCarryOver: true, includeInRequest: false })
+          nextItems.push({ id: generateId(), title: i.title, price: 0, status: 'planned', isCarryOver: false, isRework: true, includeInRequest: false })
         })
       }
 
@@ -579,7 +587,16 @@ export default function App() {
           case 'cycleItemStatus':
             return {
               ...p,
-              items: p.items.map((i) => (i.id === payload.itemId ? { ...i, status: payload.status } : i)),
+              items: p.items.map((i) =>
+                i.id === payload.itemId
+                  ? { ...i, status: payload.status, includeInRequest: payload.status === 'selesai' ? true : i.includeInRequest }
+                  : i
+              ),
+            }
+          case 'setInclude':
+            return {
+              ...p,
+              items: p.items.map((i) => (i.id === payload.itemId ? { ...i, includeInRequest: !!payload.include } : i)),
             }
           case 'updateItemTitle':
             return {
