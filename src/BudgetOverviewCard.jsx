@@ -201,13 +201,14 @@ export function BudgetOverviewCard({
                     </div>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Include checkbox: planned items can be toggled; done items are shown checked and disabled */}
-                      <label className="inline-flex items-center">
+                      <label className="inline-flex items-center" title={isDone ? 'Included (done)' : isAdmin ? 'Include in request' : 'Login admin to change'}>
                         <input
                           type="checkbox"
                           checked={!!item.includeInRequest}
                           onChange={(e) => onToggleInclude?.(item.id, e.target.checked)}
-                          disabled={!canEdit && !isDone}
-                          className="w-4 h-4 mr-2"
+                          disabled={!isAdmin && !isDone}
+                          className="w-5 h-5 mr-3 accent-indigo-500 border-2 border-slate-200 bg-white"
+                          aria-label="Include in request"
                         />
                       </label>
                       <div className="min-w-0 flex-1">
