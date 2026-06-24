@@ -717,6 +717,19 @@ export default function App() {
           {showAuthModal && (
             <AuthModal onClose={() => setShowAuthModal(false)} onSuccess={onAuthSuccess} />
           )}
+          {/* Floating login button (always on top at bottom-right) */}
+          <div className="fixed bottom-6 right-6 z-50 print:hidden">
+            <button
+              onClick={handleAdminAuth}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-black transition-colors shadow-lg ${
+                isAdmin ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-700 text-white hover:bg-slate-600'
+              }`}
+              title={isAdmin ? 'Logout Admin' : 'Login Admin'}
+            >
+              <i className={`fas ${isAdmin ? 'fa-lock-open' : 'fa-lock'} text-[12px]`} />
+              <span className="hidden sm:inline">{isAdmin ? 'Logout' : 'Login'}</span>
+            </button>
+          </div>
         </div>
       )}
     </>
